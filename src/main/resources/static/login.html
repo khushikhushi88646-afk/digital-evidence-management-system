@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in · Digital Evidence System</title>
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<canvas id="bg3d"></canvas><div class="veil"></div>
+<div class="login-wrap">
+  <section class="hero">
+    <div class="chips"><span class="chip"><b>Java</b> Spring Boot</span><span class="chip"><b>Redis</b> cache</span><span class="chip"><b>SHA-256</b> integrity</span><span class="chip"><b>JWT</b> RBAC</span></div>
+    <h1 style="margin-top:18px">Digital Evidence<br><span>Management System</span></h1>
+    <p>Tamper-evident storage for CCTV, documents, images and chat logs — with a hash-chained chain-of-custody and a Redis layer that makes repeat lookups instant.</p>
+  </section>
+  <form class="glass login-card" id="f" autocomplete="on">
+    <div class="brand"><div class="logo">DE</div><div><b>Evidence Vault</b><small>Team Avengers · GEHU</small></div></div>
+    <h2>Secure sign in</h2><div class="muted">Authorised investigators and admins only.</div>
+    <label for="u">Username</label><input id="u" name="username" required autofocus autocomplete="username">
+    <label for="p">Password</label><input id="p" name="password" type="password" required autocomplete="current-password">
+    <div class="err" id="err" role="alert"></div>
+    <button class="btn block" id="go" type="submit">Sign in</button>
+    <div class="demo">Demo accounts (click to fill)<br>
+      <button type="button" data-u="admin" data-p="admin123">Admin</button>
+      <button type="button" data-u="investigator" data-p="invest123">Investigator</button>
+    </div>
+  </form>
+</div>
+<script src="js/three.min.js"></script><script src="js/bg3d.js"></script><script src="js/api.js"></script>
+<script>
+if (API.token()) location.href = 'dashboard.html';
+document.querySelectorAll('.demo button').forEach(b => b.onclick = () => { u.value = b.dataset.u; p.value = b.dataset.p; });
+f.onsubmit = async e => {
+  e.preventDefault(); err.textContent = ''; go.disabled = true; go.textContent = 'Authenticating…';
+  try {
+    const r = await API.post('/api/auth/login', { username: u.value, password: p.value });
+    sessionStorage.setItem('token', r.token); sessionStorage.setItem('user', JSON.stringify(r));
+    location.href = 'dashboard.html';
+  } catch (x) { err.textContent = x.message; go.disabled = false; go.textContent = 'Sign in'; }
+};
+</script>
+</body></html>

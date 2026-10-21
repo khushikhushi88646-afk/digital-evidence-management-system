@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard · Digital Evidence System</title>
+<link rel="stylesheet" href="css/style.css">
+</head><body>
+<canvas id="bg3d" data-mode="compact" style="opacity:.55"></canvas><div class="veil"></div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo">DE</div><div><b>Evidence Vault</b><small>Redis · Spring Boot</small></div></div>
+    <nav class="nav" id="nav">
+      <a data-v="overview" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Overview</a>
+      <a data-v="cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v10H3z"/></svg>Cases</a>
+      <a data-v="evidence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>Evidence</a>
+      <a data-v="audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Chain of custody</a>
+      <a data-v="bench"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Cache benchmark</a>
+    </nav>
+    <div class="me"><b id="meName">…</b><span class="role" id="meRole"></span><div style="margin-top:10px"><button class="btn ghost sm" id="logout">Sign out</button></div></div>
+  </aside>
+
+  <main class="main">
+    <!-- OVERVIEW -->
+    <section class="view on" id="v-overview">
+      <div class="top"><div><h1>Command overview</h1><div class="muted">Live numbers from MySQL/H2 and Redis</div></div><button class="btn ghost sm" onclick="loadOverview()">Refresh</button></div>
+      <div class="grid cards" id="cards"></div>
+      <div class="grid two">
+        <div class="glass panel"><h3>Request flow <span class="muted" style="font-weight:400">3D · live</span></h3>
+          <canvas id="flow3d"></canvas>
+          <div class="legend"><span><i class="dot" style="background:#34d399"></i>Cache HIT (App → Redis → App)</span><span><i class="dot" style="background:#ffb547"></i>Cache MISS (→ DB → Redis)</span></div>
+          <div class="row" style="margin-top:12px"><button class="btn sm" id="demoRead">Simulate lookup</button><span class="muted" id="demoOut">Open any evidence twice to see MISS → HIT.</span></div>
+        </div>
+        <div class="grid" style="align-content:start">
+          <div class="glass panel"><h3>Cache hit ratio</h3>
+            <div class="big" id="ratio">0%</div>
+            <div class="bars"><div class="bar"><div class="lbl"><span>Hits</span><b id="hitN">0</b></div><div class="track"><div class="fill" id="hitBar" style="background:var(--good)"></div></div></div>
+            <div class="bar"><div class="lbl"><span>Misses</span><b id="missN">0</b></div><div class="track"><div class="fill" id="missBar" style="background:var(--warn)"></div></div></div></div>
+          </div>
+          <div class="glass panel"><h3>Evidence by type</h3><div class="bars" id="types"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CASES -->
+    <section class="view" id="v-cases">
+      <div class="top"><div><h1>Cases</h1><div class="muted">Each case groups its evidence</div></div></div>
+      <div class="glass panel" style="margin-bottom:16px"><h3>Open new case</h3>
+        <form id="caseForm" class="form2">
+          <div><label>Title</label><input id="cTitle" required placeholder="e.g. ATM skimming – Rajpur Road"></div>
+          <div style="grid-column:span 2"><label>Description</label><input id="cDesc" placeholder="Short summary"></div>
+          <div style="align-self:end"><button class="btn" style="width:100%">Create case</button></div>
+        </form></div>
+      <div class="glass panel tablewrap"><table><thead><tr><th>Case no.</th><th>Title</th><th>Status</th><th>Opened by</th><th>Source</th><th></th></tr></thead><tbody id="caseRows"></tbody></table></div>
+    </section>
+
+    <!-- EVIDENCE -->
+    <section class="view" id="v-evidence">
+      <div class="top"><div><h1>Evidence</h1><div class="muted">Upload, search, verify and download</div></div>
+        <div class="row"><select id="caseSel" style="width:230px"></select><input id="q" placeholder="Search title / file / hash" style="width:230px"></div></div>
+      <div class="glass panel" style="margin-bottom:16px"><h3>Upload evidence <span class="muted" style="font-weight:400">SHA-256 is computed on the server</span></h3>
+        <form id="upForm" class="form2">
+          <div><label>File</label><input type="file" id="upFile" required></div>
+          <div><label>Title</label><input id="upTitle" placeholder="Defaults to file name"></div>
+          <div><label>Type</label><select id="upType"><option>IMAGE</option><option>VIDEO</option><option>DOCUMENT</option><option>CHAT_LOG</option><option>OTHER</option></select></div>
+          <div style="grid-column:span 2"><label>Description</label><input id="upDesc" placeholder="Where / how it was collected"></div>
+          <div style="align-self:end"><button class="btn" style="width:100%" id="upBtn">Upload & hash</button></div>
+        </form></div>
+      <div class="glass panel"><div class="row" style="justify-content:space-between;margin-bottom:8px"><b>Results</b><span id="listSrc"></span></div>
+        <div class="tablewrap"><table><thead><tr><th>#</th><th>Title</th><th>Type</th><th>Size</th><th>SHA-256</th><th>Integrity</th><th></th></tr></thead><tbody id="evRows"></tbody></table></div></div>
+    </section>
+
+    <!-- AUDIT -->
+    <section class="view" id="v-audit">
+      <div class="top"><div><h1>Chain of custody</h1><div class="muted">Every entry is hashed together with the previous one</div></div>
+        <div class="row"><span id="chainRes"></span><button class="btn sm" id="chainBtn">Verify chain</button></div></div>
+      <div class="glass panel tablewrap"><table><thead><tr><th>#</th><th>Time (UTC)</th><th>User</th><th>Action</th><th>Evidence</th><th>Details</th><th>Hash</th></tr></thead><tbody id="auRows"></tbody></table></div>
+    </section>
+
+    <!-- BENCH -->
+    <section class="view" id="v-bench">
+      <div class="top"><div><h1>Cache benchmark</h1><div class="muted">Same query N times: straight from the database vs. from Redis</div></div></div>
+      <div class="glass panel" style="margin-bottom:16px"><div class="form2">
+        <div><label>Case</label><select id="bCase"></select></div>
+        <div><label>Requests</label><select id="bN"><option>200</option><option selected>1000</option><option>3000</option></select></div>
+        <div style="align-self:end"><button class="btn" id="bRun" style="width:100%">Run benchmark</button></div></div></div>
+      <div class="glass panel" id="bOut"><div class="empty">Press “Run benchmark”.</div></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="modal"><div class="glass box" id="modalBox"></div></div>
+<div class="toast" id="toast"></div>
+<script src="js/three.min.js"></script><script src="js/bg3d.js"></script><script src="js/flow3d.js"></script><script src="js/api.js"></script><script src="js/dashboard.js"></script>
+</body></html>
